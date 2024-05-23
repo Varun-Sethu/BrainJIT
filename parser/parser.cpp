@@ -4,7 +4,6 @@
 #include <vector>
 #include <istream>
 #include <memory>
-#include <iterator>
 #include <optional>
 #include <functional>
 
@@ -57,12 +56,14 @@ auto tokenise(std::istream& input_file) -> std::vector<Function<Token>> {
 
 // Contains parser definitions for each of the possible commands
 namespace Parsers {
-    using parse_result = std::optional<std::unique_ptr<ICommand>>;
+    using command = std::unique_ptr<ICommand>;
+    using parse_result = std::optional<command>;
     using parser = std::function<parse_result(std::vector<Token>&)>;
+    
 
     // read_token_from_stream will attempt to consume some provided token as many times as possible from a vector
     // and return the number of times it was consumed
-    auto read_token_from_stream(Token token, std::vector<Token>& function) -> std::optional<int32_t> {
+    auto read_token_from_stream(Token token, Function<Token>& function) -> std::optional<int32_t> {
         if (function.empty()) { return std::nullopt; }
         if (function[0] != token) { return std::nullopt; }
 
@@ -79,67 +80,68 @@ namespace Parsers {
 
 
     // MoveRightCommand parser
-    auto move_right(std::vector<Token>& function) -> parse_result {
+    auto move_right(Function<Token>& function) -> parse_result {
         auto amount = read_token_from_stream(Token::MoveRight, function);
         if (!amount.has_value()) { return std::nullopt; }
         
-        std::unique_ptr<ICommand> command = std::unique_ptr<MoveCommand>(new MoveCommand(amount.value()));
-        return std::optional(std::move(command));
+        return std::optional(command(new MoveCommand(amount.value())));
     }
 
     // MoveLeftCommand parser
-    auto move_left(std::vector<Token>& function) -> parse_result {
+    auto move_left(Function<Token>& function) -> parse_result {
         auto amount = read_token_from_stream(Token::MoveLeft, function);
         if (!amount.has_value()) { return std::nullopt; }
 
-        std::unique_ptr<ICommand> command = std::unique_ptr<MoveCommand>(new MoveCommand(-amount.value()));
-        return std::optional(std::move(command));   
+        return std::optional(
+            command(new MoveCommand(-amount.value()))
+        );   
     }
 
 
     // IncrementCommand parser
-    auto increment(std::vector<Token>& function) -> parse_result {
+    auto increment(Function<Token>& function) -> parse_result {
         auto amount = read_token_from_stream(Token::Increment, function);
         if (!amount.has_value()) { return std::nullopt; }
 
-        std::unique_ptr<ICommand> command = std::unique_ptr<UpdateCellCommand>(new UpdateCellCommand(amount.value()));
-        return std::optional(std::move(command));      
+        return std::optional(
+            command(new UpdateCellCommand(amount.value()))
+        );      
     }
 
     // DecrementCommand parser
-    auto decrement(std::vector<Token>& function) -> parse_result {
+    auto decrement(Function<Token>& function) -> parse_result {
         auto amount = read_token_from_stream(Token::Decrement, function);
         if (!amount.has_value()) { return std::nullopt; }
         
-        std::unique_ptr<ICommand> command = std::unique_ptr<UpdateCellCommand>(new UpdateCellCommand(-amount.value()));
-        return std::optional(std::move(command));
+        return std::optional(
+            command(new UpdateCellCommand(-amount.value()))
+        );
     }
 
     // OutputCommand parser
-    auto output(std::vector<Token>& function) -> parse_result {
+    auto output(Function<Token>& function) -> parse_result {
         if (function.empty() || function[0] != Token::Output) { return std::nullopt; }
         function.erase(function.begin());
 
-        std::unique_ptr<ICommand> command = std::unique_ptr<OutputCommand>(new OutputCommand());
-        return std::optional(std::move(command));
+        return std::optional(
+            command(new OutputCommand())
+        );
     }
 
     // InputCommand parser
-    auto input(std::vector<Token>& function) -> parse_result {
+    auto input(Function<Token>& function) -> parse_result {
         if (function.empty() || function[0] != Token::Input) { return std::nullopt; }
         function.erase(function.begin());
 
-        std::unique_ptr<ICommand> command = std::unique_ptr<InputCommand>(new InputCommand());
-        return std::optional(std::move(command));
+        return std::optional(command(new InputCommand()));
     }
 
     // InvokeCommand parser
-    auto invoke(std::vector<Token>& function) -> parse_result {
+    auto invoke(Function<Token>& function) -> parse_result {
         if (function.empty() || function[0] != Token::Invoke) { return std::nullopt; }
         function.erase(function.begin());
 
-        std::unique_ptr<ICommand> command = std::unique_ptr<InvokeCommand>(new InvokeCommand());
-        return std::optional(std::move(command));
+        return std::optional(command(new InvokeCommand()));
     }
 };
 

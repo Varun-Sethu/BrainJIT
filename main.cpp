@@ -1,7 +1,5 @@
 #include <iostream>
-#include <cstdint>
 #include <vector>
-#include <sstream>
 #include <memory>
 #include <istream>
 #include <fstream>
@@ -34,9 +32,11 @@ int main(int argc, char* argv[]) {
     auto program = parse_file(file_stream);
     auto jit_runtime = JitRuntime(&trigger_compilation);
     jit_compiler = std::make_unique<JitCompiler>(
-        JitCompiler(std::move(program), 
-        jit_runtime
-    ));
+        JitCompiler(
+            std::move(program), 
+            jit_runtime
+        )
+    );
 
     jit_runtime.start_function(jit_compiler->main_function());
     std::cout << std::endl;

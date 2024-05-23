@@ -9,6 +9,7 @@
 
 #include "compiler/command.cpp"
 #include "runtime/jit_runtime.cpp"
+#include "compiler/assembly.cpp"
 
 
 // special MMAP class for mmap resource management via smart pointers
@@ -51,17 +52,16 @@ class JitCompiler {
             
             // allocate a region of memory for this function
             auto mmap = std::unique_ptr<Mmap, MMapDeleter>(new Mmap(1024));
-            auto code = std::vector<unsigned char>();
+            auto code = Assembly();
 
             for (auto& command: function_definition) {
                 command->emit_asm(runtime, code);
             }
 
-            code.push_back(0xC3); // ret
+            code.emit_bytes({ 0xC3 }); // ret
             
-            memcpy(mmap->region, code.data(), code.size());
-
             // update the function table with the address of the compiled function
+            memcpy(mmap->region, code.bytes().data(), code.bytes().size());
             runtime.update_function_table(function_id, reinterpret_cast<intptr_t>(mmap->region));
             compiled_functions[function_id] = std::optional(std::move(mmap));
 

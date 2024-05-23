@@ -1,6 +1,4 @@
-MAKEFLAGS += --silent
-
-build:
+main:
 	g++ -g main.cpp -std=c++17 -I . -o main
 
 clean:

@@ -12,24 +12,26 @@
 
 
 // special MMAP class for mmap resource management via smart pointers
-struct Mmap {
-    Mmap(size_t size) : size(size) {
-        region = mmap(nullptr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (region == (void*) - 1) {
-            perror("mmap");
-            return;
+class Mmap {
+    public:
+        Mmap(size_t size) : size(size) {
+            region = mmap(nullptr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            if (region == (void*) - 1) {
+                perror("mmap");
+                return;
+            }
         }
-    }
 
-    void* region = nullptr;
-    size_t size  = 0;
+        void* region = nullptr;
+        size_t size  = 0;
 };
 
-struct MMapDeleter {
-    void operator()(Mmap* mmap) const noexcept {
-        munmap(mmap->region, mmap->size);
-        delete mmap;
-    }
+class MMapDeleter {
+    public:
+        void operator()(Mmap* mmap) const noexcept {
+            munmap(mmap->region, mmap->size);
+            delete mmap;
+        }
 };
 
 

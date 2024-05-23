@@ -173,8 +173,8 @@ auto parse_tokens(std::vector<Function<Token>> tokens) -> std::vector<Function<s
             }
 
             if (!matched_parser) {
-                // terminate this function compilation loop early
-                break;
+                // this should never happen !
+                perror("Failed to match a parser!!");
             }
         }
 

@@ -22,4 +22,6 @@ There are a few examples. Usage is simple... Just compile and
 ./main file.bf
 ```
 
-The JIT compiler will compile each function on demand. A function will be compiled on its first invocation and the compile result is cached for later invocations.
+The JIT compiler will compile each function on demand. A function will be compiled on its first invocation and the compile result is cached for later invocations. There's currently no support
+for optimizing away tail recursive calls (haven't really thought much about this). So the stack can grow indefinitely, technically since there is no argument parsing in Brainfunct we do not actually
+need a stack and can simply just make use of jump instructions (I'll fix that indefinitely), just note that stack overflows are an issue with this implementation.

@@ -164,7 +164,7 @@ auto parse_tokens(std::vector<Function<Token>> tokens) -> std::vector<Function<s
         auto compiled_func = Function<std::unique_ptr<ICommand>>();
 
         while (!function.empty()) {
-            auto matched_parser = std::any_of(std::begin(parsers), std::end(parsers), [&function] (auto& parser) {
+            auto matched_parser = std::any_of(std::begin(parsers), std::end(parsers), [&function, &compiled_func] (auto& parser) {
                 auto command = parser(function);
                 if (command.has_value()) {
                     compiled_func.push_back(std::move(command.value()));

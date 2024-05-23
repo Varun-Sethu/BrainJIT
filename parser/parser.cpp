@@ -62,13 +62,13 @@ namespace Parsers {
 
     // read_token_from_stream will attempt to consume some provided token as many times as possible from a vector
     // and return the number of times it was consumed
-    auto read_token_from_stream(Token token, std::vector<Token>& function) -> std::optional<int> {
+    auto read_token_from_stream(Token token, std::vector<Token>& function) -> std::optional<int32_t> {
         if (function.empty()) { return std::nullopt; }
         if (function[0] != token) { return std::nullopt; }
 
         // try and consume as much of the token as possible, this results in a more efficient program
         // as we chunk n of the same operations into 1 instruction as opposed to n different instructions
-        int amount = 0;
+        int32_t amount = 0;
         while (!function.empty() && function[0] == token) {
             amount++;
             function.erase(function.begin());
@@ -83,7 +83,7 @@ namespace Parsers {
         auto amount = read_token_from_stream(Token::MoveRight, function);
         if (!amount.has_value()) { return std::nullopt; }
         
-        std::unique_ptr<ICommand> command = std::unique_ptr<MoveRightCommand>(new MoveRightCommand(amount.value()));
+        std::unique_ptr<ICommand> command = std::unique_ptr<MoveCommand>(new MoveCommand(amount.value()));
         return std::optional(std::move(command));
     }
 
@@ -92,7 +92,7 @@ namespace Parsers {
         auto amount = read_token_from_stream(Token::MoveLeft, function);
         if (!amount.has_value()) { return std::nullopt; }
 
-        std::unique_ptr<ICommand> command = std::unique_ptr<MoveLeftCommand>(new MoveLeftCommand(amount.value()));
+        std::unique_ptr<ICommand> command = std::unique_ptr<MoveCommand>(new MoveCommand(-amount.value()));
         return std::optional(std::move(command));   
     }
 
@@ -102,7 +102,7 @@ namespace Parsers {
         auto amount = read_token_from_stream(Token::Increment, function);
         if (!amount.has_value()) { return std::nullopt; }
 
-        std::unique_ptr<ICommand> command = std::unique_ptr<IncrementCommand>(new IncrementCommand(amount.value()));
+        std::unique_ptr<ICommand> command = std::unique_ptr<UpdateCellCommand>(new UpdateCellCommand(amount.value()));
         return std::optional(std::move(command));      
     }
 
@@ -111,7 +111,7 @@ namespace Parsers {
         auto amount = read_token_from_stream(Token::Decrement, function);
         if (!amount.has_value()) { return std::nullopt; }
         
-        std::unique_ptr<ICommand> command = std::unique_ptr<DecrementCommand>(new DecrementCommand(amount.value()));
+        std::unique_ptr<ICommand> command = std::unique_ptr<UpdateCellCommand>(new UpdateCellCommand(-amount.value()));
         return std::optional(std::move(command));
     }
 

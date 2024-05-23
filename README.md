@@ -4,7 +4,9 @@ x86_64 - Linux.
 
 ## Symbols
 Below are some base symbols in the language (stolen from the esolang page)
+
 | Symbol | Description                  |
+| ------ | ---------------------------- |
 |   >    |  move pointer to right       |
 |   <    |  move pointer to left        |
 |   +    |  increment value at pointer  |

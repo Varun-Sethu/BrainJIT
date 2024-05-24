@@ -7,7 +7,6 @@
 class MoveCommand : public ICommand {
     public:
         MoveCommand(int32_t amount) : amount(amount) {}
-        auto debug_print() -> void override { std::cout << ">(" << amount << ")" << std::endl; }
 
         // emit_asm for the move command will emit code that moves the tape pointer by the specified amount
         // the current tape addresses is provided by the runtime and the address
@@ -40,8 +39,6 @@ class MoveCommand : public ICommand {
 class UpdateCellCommand : public ICommand {
     public: 
         UpdateCellCommand(int32_t amount) : amount(amount) {}
-
-        auto debug_print() -> void override { std::cout << "+(" << amount << ")" << std::endl; }
 
         // emit_asm for the increment command will emit code that increments the value at the pointer
         // the current tape addresses is provided by the runtime and the address        
@@ -83,8 +80,6 @@ class UpdateCellCommand : public ICommand {
 };
 class OutputCommand : public ICommand {
     public:
-        auto debug_print() -> void override { std::cout << "." << std::endl; }
-
         // emit_asm for the output command will emit code that outputs the value at the pointer
         // theres two ways of doing this. One way is using the kernel's syscalls directly
         // and the other way is to use the libc's putchar function.
@@ -138,7 +133,6 @@ class OutputCommand : public ICommand {
 
 class InputCommand : public ICommand {
     public:
-        auto debug_print() -> void override { std::cout << "," << std::endl; }
         auto emit_asm(const JitRuntime& runtime, Assembly& code) -> void override {
             // 1. mov rax, 0 (read syscall number)
             // 2. sub rsp, 1 (allocate buffer on stack)
@@ -188,8 +182,6 @@ class InputCommand : public ICommand {
 
 class InvokeCommand : public ICommand {
     public:
-        auto debug_print() -> void override { std::cout << "@" << std::endl; }
-
         // emit_asm for the invoke command will emit code that performs a lookup in the function table
         // for a given function id and then calls that function
         auto emit_asm(const JitRuntime& runtime, Assembly& code) -> void override {

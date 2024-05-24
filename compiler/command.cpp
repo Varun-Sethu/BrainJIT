@@ -6,5 +6,4 @@
 class ICommand {
     public:
         virtual auto emit_asm(const JitRuntime& runtime, Assembly& code) -> void = 0;
-        virtual auto debug_print() -> void = 0;
 };

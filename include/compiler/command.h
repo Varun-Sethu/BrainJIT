@@ -3,12 +3,12 @@
 #include "runtime/jit_runtime.h"
 #include "compiler/assembly.h"
 
+#include <iostream>
+
 class ICommand {
     public:
         virtual auto emit_asm(const JitRuntime& runtime, Assembly& code) -> void = 0;
 };
-
-
 
 // MoveCommand will move the tape pointer by the specified amount
 class MoveCommand : public ICommand {

@@ -60,122 +60,72 @@ auto tokenise(std::istream& input_file) -> std::vector<TokenisedFunction> {
 namespace Parsers {
     using command = std::unique_ptr<ICommand>;
     using parse_result = std::optional<command>;
-    using parser = std::function<parse_result(TokenisedFunction&)>;
+    using parser = std::function<parse_result(TokenisedFunction::iterator& begin, TokenisedFunction::iterator& end)>;
     
+    // token_sequence_parser will construct a parser that accepts a sequence of some defined token, ie. the parser for moveRight
+    // can accept some sequence of >>> which will be parsed into MoveRight(3)
+    template <typename T>
+    auto token_sequence_parser(Token token, std::function<int32_t(int32_t)> amount_transformer) -> auto {
+        return [token, amount_transformer] (TokenisedFunction::iterator& begin, TokenisedFunction::iterator& end) -> parse_result {
+            if (begin == end) { return std::nullopt; }
 
-    // read_token_from_stream will attempt to consume some provided token as many times as possible from a vector
-    // and return the number of times it was consumed
-    auto read_token_from_stream(Token token, TokenisedFunction& function) -> std::optional<int32_t> {
-        if (function.empty()) { return std::nullopt; }
-        if (function[0] != token) { return std::nullopt; }
+            auto next_non_token = std::find_if(begin, end, [token] (auto& t) { return t != token; });
+            auto amount = std::distance(begin, next_non_token);
+            begin = next_non_token;
 
-        // try and consume as much of the token as possible, this results in a more efficient program
-        // as we chunk n of the same operations into 1 instruction as opposed to n different instructions
-        int32_t amount = 0;
-        while (!function.empty() && function[0] == token) {
-            amount++;
-            function.erase(function.begin());
-        }
-
-        return amount;
+            return amount == 0 
+                ? std::nullopt 
+                : std::optional(command(new T(amount_transformer(amount))));
+        };
     }
 
-
-    // MoveRightCommand parser
-    auto move_right(TokenisedFunction& function) -> parse_result {
-        auto amount = read_token_from_stream(Token::MoveRight, function);
-        if (!amount.has_value()) { return std::nullopt; }
-        
-        return std::optional(command(new MoveCommand(amount.value())));
+    template <typename T>
+    auto token_parser(Token token) -> auto {
+        return [token] (TokenisedFunction::iterator& begin, TokenisedFunction::iterator& end) -> parse_result {
+            if (begin == end || *begin != token) { return std::nullopt; }
+            begin++;
+            return std::optional(command(new T()));
+        };
     }
 
-    // MoveLeftCommand parser
-    auto move_left(TokenisedFunction& function) -> parse_result {
-        auto amount = read_token_from_stream(Token::MoveLeft, function);
-        if (!amount.has_value()) { return std::nullopt; }
+    auto negate(int32_t amount) -> int32_t { return -amount; }
+    auto identity(int32_t amount) -> int32_t { return amount; }
 
-        return std::optional(
-            command(new MoveCommand(-amount.value()))
-        );   
-    }
-
-
-    // IncrementCommand parser
-    auto increment(TokenisedFunction& function) -> parse_result {
-        auto amount = read_token_from_stream(Token::Increment, function);
-        if (!amount.has_value()) { return std::nullopt; }
-
-        return std::optional(
-            command(new UpdateCellCommand(amount.value()))
-        );      
-    }
-
-    // DecrementCommand parser
-    auto decrement(TokenisedFunction& function) -> parse_result {
-        auto amount = read_token_from_stream(Token::Decrement, function);
-        if (!amount.has_value()) { return std::nullopt; }
-        
-        return std::optional(
-            command(new UpdateCellCommand(-amount.value()))
-        );
-    }
-
-    // OutputCommand parser
-    auto output(TokenisedFunction& function) -> parse_result {
-        if (function.empty() || function[0] != Token::Output) { return std::nullopt; }
-        function.erase(function.begin());
-
-        return std::optional(
-            command(new OutputCommand())
-        );
-    }
-
-    // InputCommand parser
-    auto input(TokenisedFunction& function) -> parse_result {
-        if (function.empty() || function[0] != Token::Input) { return std::nullopt; }
-        function.erase(function.begin());
-
-        return std::optional(command(new InputCommand()));
-    }
-
-    // InvokeCommand parser
-    auto invoke(TokenisedFunction& function) -> parse_result {
-        if (function.empty() || function[0] != Token::Invoke) { return std::nullopt; }
-        function.erase(function.begin());
-
-        return std::optional(command(new InvokeCommand()));
-    }
+    // List of parsers that can be used for matching tokens
+    parser parsers[] = {
+        Parsers::token_sequence_parser<MoveCommand>(Token::MoveRight, /* amountTransformer = */ identity),
+        Parsers::token_sequence_parser<MoveCommand>(Token::MoveLeft, /* amountTransformer = */ negate),
+        Parsers::token_sequence_parser<UpdateCellCommand>(Token::Increment, /* amountTransformer = */ identity),
+        Parsers::token_sequence_parser<UpdateCellCommand>(Token::Decrement, /* amountTransformer = */ negate),
+        Parsers::token_parser<OutputCommand>(Token::Output),
+        Parsers::token_parser<InputCommand>(Token::Input),
+        Parsers::token_parser<InvokeCommand>(Token::Invoke)
+    };
 };
 
 
 // the parse command will take a token stream and transform it into a sequence of commands
 // each command in the sequence will be responsible for emitting the appropriate assembly code
-auto parse_tokens(std::vector<TokenisedFunction> tokens) -> std::vector<ParsedFunction> {    
-    Parsers::parser parsers[] = {
-        [] (TokenisedFunction& function) -> Parsers::parse_result { return Parsers::move_right(function); },
-        [] (TokenisedFunction& function) -> Parsers::parse_result { return Parsers::move_left(function); },
-        [] (TokenisedFunction& function) -> Parsers::parse_result { return Parsers::increment(function); },
-        [] (TokenisedFunction& function) -> Parsers::parse_result { return Parsers::decrement(function); },
-        [] (TokenisedFunction& function) -> Parsers::parse_result { return Parsers::output(function); },
-        [] (TokenisedFunction& function) -> Parsers::parse_result { return Parsers::input(function); },
-        [] (TokenisedFunction& function) -> Parsers::parse_result { return Parsers::invoke(function); }
-    };
-
+auto parse_tokens(std::vector<TokenisedFunction> tokens) -> std::vector<ParsedFunction> {
     auto functions = std::vector<ParsedFunction>();
+
     for (auto function : tokens) {
         auto compiled_func = ParsedFunction();
+        auto func_start = std::begin(function);
+        auto func_end  = std::end(function);
 
-        while (!function.empty()) {
-            auto matched_parser = std::any_of(std::begin(parsers), std::end(parsers), [&function, &compiled_func] (auto& parser) {
-                auto command = parser(function);
-                if (command.has_value()) {
-                    compiled_func.push_back(std::move(command.value()));
-                    return true;
-                }
+        auto try_match_parser = [&] (auto& parser) {
+            auto command = parser(func_start, func_end);
+            if (command.has_value()) {
+                compiled_func.push_back(std::move(command.value()));
+                return true;
+            }
 
-                return false;
-            });
+            return false;
+        };
 
+        while (func_start != func_end) {
+            auto matched_parser = std::any_of(std::begin(Parsers::parsers), std::end(Parsers::parsers), try_match_parser);
             if (!matched_parser) {
                 // this should never happen !
                 perror("Failed to match a parser!! This is so sad and deeply un-esteemed.");

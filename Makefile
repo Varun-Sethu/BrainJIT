@@ -4,8 +4,8 @@ INCL = -I include/
 bin/parser.o: parser/parser.cpp
 	g++ -g -c parser/parser.cpp $(GCC_FLAGS) $(INCL) -o bin/parser.o
 
-bin/compiler.o: compiler/compiler.cpp
-	g++ -g -c compiler/compiler.cpp $(GCC_FLAGS) $(INCL) -o bin/compiler.o
+bin/compiler.o: compiler/unity.cpp compiler/assembly.cpp compiler/jit_compiler.cpp compiler/command.cpp
+	g++ -g -c compiler/unity.cpp $(GCC_FLAGS) $(INCL) -o bin/compiler.o
 
 bin/runtime.o: runtime/jit_runtime.cpp
 	g++ -g -c runtime/jit_runtime.cpp $(GCC_FLAGS) $(INCL) -o bin/runtime.o

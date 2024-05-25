@@ -4,9 +4,9 @@
 #include <istream>
 #include <fstream>
 
-#include "parser/parser.cpp"
-#include "runtime/jit_runtime.cpp"
-#include "compiler/jit_compiler.cpp"
+#include "compiler/jit_compiler.h"
+#include "parser/parser.h"
+#include "runtime/jit_runtime.h"
 
 // This quite is sad but theres no real way around it.
 // We require a global singleton instance of the JIT compiler, this is because
@@ -17,12 +17,6 @@ std::unique_ptr<JitCompiler> jit_compiler;
 __attribute__((noinline)) auto trigger_compilation(uint32_t function_id) -> void {
     jit_compiler->trigger_compilation(function_id);
 }
-
-auto parse_file(std::istream& file_stream) -> std::vector<Function<std::unique_ptr<ICommand>>> {
-    auto tokens = tokenise(file_stream);
-    return parse_tokens(tokens);
-}
-
 
 int main(int argc, char* argv[]) {
     auto program_file = argv[1];
